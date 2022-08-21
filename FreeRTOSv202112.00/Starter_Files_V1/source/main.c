@@ -88,7 +88,36 @@ static void prvSetupHardware( void );
  * Application entry point:
  * Starts all the other tasks, then starts the scheduler. 
  */
+/*Testing Purposes*/
+typedef unsigned char uint8;
+uint8 firstCounter=0;
+uint8 firstID=100;
 
+
+//Not to be Null if we want handler return
+TaskHandle_t task1Handler= NULL;
+#define TASK1_PRIORITY	1
+#define TASK1_PRIODICITY 10
+#define TASK1_STACK_SIZE_WORDS		(100)
+
+//Not to be Null if we want handler return
+TaskHandle_t task2Handler= NULL;
+#define TASK2_PRIORITY	1
+#define TASK2_PRIODICITY 20
+#define TASK2_STACK_SIZE_WORDS		(100)
+
+void vApplicationIdleHook( void )
+{
+	if(firstCounter==0)
+	{
+		firstID=3;
+		firstCounter++;
+	}
+	GPIO_write(PORT_0,PIN2,PIN_IS_HIGH);
+
+	GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
+	GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
+}
 void Task1( void * pvParameters )
 {
     /* The parameter value is expected to be 1 as 1 is passed in the
@@ -98,39 +127,63 @@ void Task1( void * pvParameters )
 	TickType_t lastTickVal = xTaskGetTickCount();
 	#define PIN_OFF		0
 	#define PIN_ON		1
-	static lastState=PIN_OFF;
+	static unsigned char lastState=PIN_OFF;
 
+	if(firstCounter==0)
+	{
+		firstID=1;
+		firstCounter++;
+	}
     for( ;; )
     {
+		GPIO_write(PORT_0,PIN0,PIN_IS_HIGH);
 
-        /* Task code goes here. */
-		if(lastState==PIN_OFF)
-		{
-			GPIO_write(PORT_0,PIN0,PIN_IS_HIGH);
-			//GPIO_write(PORT_0,PIN1,PIN_IS_HIGH);
-			lastState=PIN_ON;
-		}
-		else
-		{
-			GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
-			//GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
-			lastState=PIN_OFF;
-		}	
-		vTaskDelayUntil(&lastTickVal,1000);
+
+		GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
+		GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
+
+		vTaskDelayUntil(&lastTickVal,TASK1_PRIODICITY);
     }
 }
 
-TaskHandle_t task1Handler=NULL;
-#define TASK1_PRIORITY	1
-#define TASK1_STACK_SIZE_WORDS		(100)
+void Task2( void * pvParameters )
+{
+    /* The parameter value is expected to be 1 as 1 is passed in the
+    pvParameters value in the call to xTaskCreate() below. 
+    configASSERT( ( ( uint32_t ) pvParameters ) == 1 );*/
+
+	TickType_t lastTickVal = xTaskGetTickCount();
+
+	if(firstCounter==0)
+	{
+		firstID=2;
+		firstCounter++;
+	}
+
+    for( ;; )
+    {
+		GPIO_write(PORT_0,PIN1,PIN_IS_HIGH);
+
+		GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
+		GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
+		/*Should block according to task periodicity*/
+		vTaskDelayUntil(&lastTickVal,TASK2_PRIODICITY);
+    }
+}
+
 int main( void )
 {
 	/* Setup the hardware for use with the Keil demo board. */
 	prvSetupHardware();
 
+	GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
+	GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
+	GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
 	
     /* Create Tasks here */
-	xTaskCreate(Task1,"Task1_string",TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler);
+
+	xTaskPeriodicCreate(Task2,"Task2_string",TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,TASK2_PRIODICITY);
+	xTaskPeriodicCreate(Task1,"Task1_string",TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,TASK1_PRIODICITY);	
 
 	/* Now all the tasks have been started - start the scheduler.
 
