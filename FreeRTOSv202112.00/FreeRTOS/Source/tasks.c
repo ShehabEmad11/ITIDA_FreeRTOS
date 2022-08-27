@@ -2891,7 +2891,10 @@ BaseType_t xTaskIncrementTick( void )
                     and insert it in the correct position in the EDF ready list"
                     We Already in Loop over all tasks in delayed list, we should calculate new deadline before
                     add to ready list*/
-                    /*Todo: think about it*/
+                    /*We will only reach here if we didn't break the loop inside the above condition " xConstTickCount < xItemValue" 
+                    which will means that the current head of the pxDelayedTaskList has value >= current tick
+                      i.e(Head-> xStateListItem-> xItemValue >= xConstTickCount) so for this task we have to update the deadline
+                      i.e we will not update deadline every tick we will only update it in tick where the task should be moved to ready list  */
                     #if 1
                     listSET_LIST_ITEM_VALUE(&(pxTCB->xStateListItem),(pxTCB->xTaskPeriod + xConstTickCount));
                     #endif
