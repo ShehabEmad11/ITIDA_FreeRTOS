@@ -91,7 +91,7 @@ static void prvSetupHardware( void );
 /*Testing Purposes*/
 typedef unsigned char uint8;
 uint8 firstCounter=0;
-uint8 firstID=100;
+uint8 firstID=100,secondID=100;
 
 
 //Not to be Null if we want handler return
@@ -106,6 +106,11 @@ TaskHandle_t task2Handler= NULL;
 #define TASK2_PRIODICITY 20
 #define TASK2_STACK_SIZE_WORDS		(100)
 
+#define CAPACITY 2 //cpu time in tick
+#define A_PERIOD 5 //task A period
+#define B_PERIOD 8 //task B period
+
+
 void vApplicationIdleHook( void )
 {
 	if(firstCounter==0)
@@ -118,6 +123,7 @@ void vApplicationIdleHook( void )
 	GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
 	GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
 }
+#if 0
 void Task1( void * pvParameters )
 {
     /* The parameter value is expected to be 1 as 1 is passed in the
@@ -142,7 +148,7 @@ void Task1( void * pvParameters )
 		GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
 		GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
 
-		vTaskDelayUntil(&lastTickVal,TASK1_PRIODICITY);
+		vTaskDelayUntil(&lastTickVal,A_PERIOD);
     }
 }
 
@@ -167,8 +173,91 @@ void Task2( void * pvParameters )
 		GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
 		GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
 		/*Should block according to task periodicity*/
-		vTaskDelayUntil(&lastTickVal,TASK2_PRIODICITY);
+		vTaskDelayUntil(&lastTickVal,B_PERIOD);
     }
+}
+#endif
+void TSK_A (void *pvParameters)
+{
+	TickType_t xLastWakeTimeA;
+	const TickType_t xFrequency = A_PERIOD; //tsk A frequency
+	volatile int count = CAPACITY; //tsk A capacity
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTimeA = xTaskGetTickCount();
+	if(firstCounter==0)
+	{
+		firstID=1;
+		firstCounter++;
+	}
+	else if(firstCounter==1)
+	{
+		secondID=1;
+		firstCounter++;
+	}
+	while(1)
+	{
+		TickType_t xTime = xTaskGetTickCount ();
+		TickType_t x;
+		GPIO_write(PORT_0,PIN0,PIN_IS_HIGH);
+
+		GPIO_write(PORT_0,PIN1,PIN_IS_LOW);
+		GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
+		while(count != 0)
+		{
+			x=xTaskGetTickCount ();
+#if 0
+			if(x >= xTime + CAPACITY)
+				break;
+#endif
+			if(( x = xTaskGetTickCount () ) > xTime)
+			{
+				xTime = x;
+				count --;
+			}
+		}
+		count = CAPACITY;
+		// Wait for the next cycle.
+		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
+	}
+}
+
+void TSK_B (void *pvParameters)
+{
+	TickType_t xLastWakeTimeB;
+	const TickType_t xFrequency = B_PERIOD; //tsk A frequency
+	volatile int count = CAPACITY; //tsk A capacity
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTimeB = xTaskGetTickCount();
+	while(1)
+	{
+		TickType_t xTime = xTaskGetTickCount ();
+		TickType_t x;
+		if(firstCounter==0)
+		{
+			firstID=2;
+			firstCounter++;
+		}
+		else if(firstCounter==1)
+		{
+			secondID=2;
+			firstCounter++;
+		}
+		GPIO_write(PORT_0,PIN1,PIN_IS_HIGH);
+
+		GPIO_write(PORT_0,PIN0,PIN_IS_LOW);
+		GPIO_write(PORT_0,PIN2,PIN_IS_LOW);
+		while(count != 0)
+		{
+			if(( x = xTaskGetTickCount () ) > xTime)
+			{
+				xTime = x;
+				count --;
+			}
+		}
+		count = CAPACITY;
+		// Wait for the next cycle.
+		vTaskDelayUntil( &xLastWakeTimeB, xFrequency );
+	}
 }
 
 int main( void )
@@ -182,8 +271,8 @@ int main( void )
 	
     /* Create Tasks here */
 
-	xTaskPeriodicCreate(Task2,"Task2_string",TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,TASK2_PRIODICITY);
-	xTaskPeriodicCreate(Task1,"Task1_string",TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,TASK1_PRIODICITY);	
+	xTaskPeriodicCreate(TSK_A,( const char * ) "A",TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,A_PERIOD);	
+	xTaskPeriodicCreate(TSK_B,( const char * ) "B",TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,B_PERIOD);
 
 	/* Now all the tasks have been started - start the scheduler.
 
