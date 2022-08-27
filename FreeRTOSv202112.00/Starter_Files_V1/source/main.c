@@ -183,7 +183,8 @@ void TSK_A (void *pvParameters)
 	const TickType_t xFrequency = A_PERIOD; //tsk A frequency
 	volatile int count = CAPACITY; //tsk A capacity
 	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTimeA = xTaskGetTickCount();
+	//xLastWakeTimeA = xTaskGetTickCount();
+	xLastWakeTimeA = 0;
 	if(firstCounter==0)
 	{
 		firstID=1;
@@ -227,7 +228,8 @@ void TSK_B (void *pvParameters)
 	const TickType_t xFrequency = B_PERIOD; //tsk A frequency
 	volatile int count = CAPACITY; //tsk A capacity
 	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTimeB = xTaskGetTickCount();
+	//xLastWakeTimeB = xTaskGetTickCount();
+	xLastWakeTimeB = 0;
 	while(1)
 	{
 		TickType_t xTime = xTaskGetTickCount ();
