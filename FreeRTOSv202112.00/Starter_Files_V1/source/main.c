@@ -89,7 +89,63 @@ static void prvSetupHardware( void );
  * Starts all the other tasks, then starts the scheduler. 
  */
 
+typedef unsigned char uint8;
+typedef unsigned short int uint16;
 
+#if 0
+typedef enum 
+{
+	LOW_LEVEL,
+	HIGH_LEVEL
+}buttonLevel_t;
+#endif
+
+typedef enum 
+{
+	FALLING_EDGE,
+	RISING_EDGE,
+	INIT_EDGE
+}buttonEdge_t;
+
+#ifndef FALSE
+	#define FALSE			(0)
+#endif
+#ifndef TRUE
+	#define TRUE			(1)
+#endif
+
+#define BUTTON1_PORT	(PORT_0)
+#define BUTTON1_PIN		(PIN8)
+
+#define BUTTON2_PORT	(PORT_0)
+#define BUTTON2_PIN		(PIN9)
+
+static pinState_t   currentB1Level=PIN_IS_LOW,   prevB1Level=PIN_IS_LOW;
+static buttonEdge_t currentB1Edge=INIT_EDGE,  prevB1Edge=INIT_EDGE;
+	
+static pinState_t   currentB2Level=PIN_IS_LOW,   prevB2Level=PIN_IS_LOW;
+static buttonEdge_t currentB2Edge=INIT_EDGE,  prevB2Edge=INIT_EDGE;
+
+typedef struct 
+{
+	uint8 newEvent;
+	buttonEdge_t	buttonState;
+}buttonInfo_t;
+
+typedef struct 
+{
+	uint8 newEvent;
+	char *ptrArrData;
+	uint16 length;
+}msgInfo_t;
+
+
+
+//buttonInfo_t button1Info={FALSE,INIT_EDGE};
+//buttonInfo_t button2Info={FALSE,INIT_EDGE};
+msgInfo_t msgObj={FALSE,NULL,0};
+msgInfo_t button1Obj={FALSE,NULL,0};
+msgInfo_t button2Obj={FALSE,NULL,0};
 
 //Not to be Null if we want handler return
 TaskHandle_t task1Handler= NULL;
@@ -143,7 +199,7 @@ TaskHandle_t task6Handler= NULL;
 #define TASK6_EXECUTION_TIME 		(12u) //cpu time in ticks
 #define TASK6_PERIODICITY 			(100u)
 
-typedef unsigned short int uint16;
+
 void DisableAllPortALedsExcept(uint16 ledID)
 {
 	uint16 pinIter;
@@ -166,11 +222,29 @@ void vApplicationIdleHook( void )
 	DisableAllPortALedsExcept(PIN6);
 }
 
+#include <stdio.h>
+void vApplicationTickHook (void)
+{
+	#if 0
+	char arr[11]; TickType_t x;
+	x=xTaskGetTickCount();
+//	snprintf(arr,30,"CurrentTick=%d\n",xTaskGetTickCount());
+
+	if (x%10 == 0)
+	{
+		snprintf(arr,10,"%d\n",x);
+		vSerialPutString(arr,5);
+	}
+	#endif
+}
+uint16 changeCounter1=0,changeCounter2=0;
 void TASK_1 (void *pvParameters)
 {
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK1_PERIODICITY; //tsk A frequency
 	volatile int count = TASK1_EXECUTION_TIME; //tsk A capacity
+	const char risingEvent[]="RISE1\n";
+	const char fallingEvent[]="FALL1\n";
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -178,8 +252,56 @@ void TASK_1 (void *pvParameters)
 	{
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
-	
+		
+		
 		DisableAllPortALedsExcept(PIN0);
+
+		currentB1Level	=  GPIO_read(BUTTON1_PORT , BUTTON1_PIN);
+
+		if(currentB1Level != prevB1Level)
+		{
+			if(currentB1Level == PIN_IS_HIGH  && prevB1Level == PIN_IS_LOW)
+			{
+				changeCounter1++;
+//				currentB1Edge = RISING_EDGE;
+
+				button1Obj.ptrArrData=(char*)risingEvent;
+				button1Obj.length=sizeof(risingEvent)/sizeof(risingEvent[0]);
+				button1Obj.newEvent=TRUE;
+			}
+			else if(currentB1Level == PIN_IS_LOW  && prevB1Level == PIN_IS_HIGH)
+			{
+				changeCounter1++;
+				//currentB1Edge = FALLING_EDGE;
+				button1Obj.ptrArrData=(char*)fallingEvent;
+				button1Obj.length=sizeof(fallingEvent)/sizeof(fallingEvent[0]);
+				button1Obj.newEvent=TRUE;
+			}
+		}
+		prevB1Level=currentB1Level;
+
+#if 0
+		if(currentB1Edge != prevB1Edge)
+		{
+			//Report to task2 shared resource
+			if(currentB1Edge == RISING_EDGE)
+			{
+				button1Obj.
+			}
+			else if (currentB1Edge == FALLING_EDGE)
+			{
+
+			}
+			else
+			{
+				vSerialPutString("ERROR_EDGE\n",11);
+			}
+			button1Info.newEvent=TRUE;
+			
+			prevB1Edge=currentB1Edge;
+		}	
+#endif
+#if 0
 		while(count != 0)
 		{
 			x=xTaskGetTickCount ();
@@ -190,6 +312,7 @@ void TASK_1 (void *pvParameters)
 			}
 		}
 		count = TASK1_EXECUTION_TIME;
+#endif
 		// Wait for the next cycle.
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
@@ -200,14 +323,41 @@ void TASK_2 (void *pvParameters)
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK2_PERIODICITY; //tsk A frequency
 	volatile int count = TASK2_EXECUTION_TIME; //tsk A capacity
+	const char risingEvent2[]="RISE2\n";
+	const char fallingEvent2[]="FALL2\n";
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
 	while(1)
 	{
 		TickType_t xTime = xTaskGetTickCount ();
-		TickType_t x;
+		
 		DisableAllPortALedsExcept(PIN1);
+
+		currentB2Level	=  GPIO_read(BUTTON2_PORT , BUTTON2_PIN);
+
+		if(currentB2Level != prevB2Level)
+		{
+			if(currentB2Level == PIN_IS_HIGH  && prevB2Level == PIN_IS_LOW)
+			{
+				changeCounter2++;
+//				currentB2Edge = RISING_EDGE;
+
+				button2Obj.ptrArrData=(char*)risingEvent2;
+				button2Obj.length=sizeof(risingEvent2)/sizeof(risingEvent2[0]);
+				button2Obj.newEvent=TRUE;
+			}
+			else if(currentB2Level == PIN_IS_LOW  && prevB2Level == PIN_IS_HIGH)
+			{
+				changeCounter2++;
+				//currentB2Edge = FALLING_EDGE;
+				button2Obj.ptrArrData=(char*)fallingEvent2;
+				button2Obj.length=sizeof(fallingEvent2)/sizeof(fallingEvent2[0]);
+				button2Obj.newEvent=TRUE;
+			}
+		}
+		prevB2Level=currentB2Level;
+#if 0
 		while(count != 0)
 		{
 			x=xTaskGetTickCount ();
@@ -219,6 +369,7 @@ void TASK_2 (void *pvParameters)
 		}
 		count = TASK2_EXECUTION_TIME;
 		// Wait for the next cycle.
+#endif
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
 }
@@ -229,6 +380,8 @@ void TASK_3 (void *pvParameters)
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK3_PERIODICITY; //tsk A frequency
 	volatile int count = TASK3_EXECUTION_TIME; //tsk A capacity
+	const char localArrData[]="msg3\n";
+
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -237,8 +390,15 @@ void TASK_3 (void *pvParameters)
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
 
-		DisableAllPortALedsExcept(PIN2);
 
+		DisableAllPortALedsExcept(PIN2);
+		
+		msgObj.ptrArrData=(char*)&localArrData[0];
+		msgObj.newEvent=TRUE;
+		msgObj.length=sizeof(localArrData)/sizeof(localArrData[0]);
+		
+		
+	#if 0
 		while(count != 0)
 		{
 			x=xTaskGetTickCount ();
@@ -250,6 +410,7 @@ void TASK_3 (void *pvParameters)
 		}
 		count = TASK3_EXECUTION_TIME;
 		// Wait for the next cycle.
+	#endif
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
 }
@@ -268,6 +429,44 @@ void TASK_4 (void *pvParameters)
 		TickType_t x;
 	
 		DisableAllPortALedsExcept(PIN3);
+
+		if(msgObj.newEvent==TRUE)
+		{
+			if(pdTRUE == vSerialPutString(msgObj.ptrArrData,msgObj.length))
+			{
+				msgObj.newEvent=FALSE;
+			}
+		}
+		else
+		{
+		//	vSerialPutString("NO_PeriodicMsg\n",16);
+		}
+
+		if(button1Obj.newEvent==TRUE)
+		{
+			if(pdTRUE == vSerialPutString(button1Obj.ptrArrData,button1Obj.length))
+			{
+				button1Obj.newEvent=FALSE;
+			}
+		}
+		else
+		{
+		//	vSerialPutString("NO_BUTM1_EVENT\n",16);
+		}
+
+		if(button2Obj.newEvent==TRUE)
+		{
+			if(pdTRUE == vSerialPutString(button2Obj.ptrArrData,button2Obj.length))
+			{
+				button2Obj.newEvent=FALSE;
+			}
+		}
+		else
+		{
+		//	vSerialPutString("NO_BUTM2_EVENT\n",16);
+		}
+
+#if 0
 		while(count != 0)
 		{
 			x=xTaskGetTickCount ();
@@ -278,6 +477,7 @@ void TASK_4 (void *pvParameters)
 			}
 		}
 		count = TASK4_EXECUTION_TIME;
+#endif
 		// Wait for the next cycle.
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
