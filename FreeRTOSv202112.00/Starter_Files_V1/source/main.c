@@ -488,7 +488,7 @@ void TASK_5 (void *pvParameters)
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK5_PERIODICITY; //tsk A frequency
 	//volatile int count1 = TASK5_EXECUTION_TIME; //tsk A capacity
-	//volatile TickType_t incCounts1=0;
+	volatile TickType_t incCounts1=0;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -499,12 +499,15 @@ void TASK_5 (void *pvParameters)
 
 		DisableAllPortALedsExcept(PIN4);
 
-		#if 0
-		while(incCounts1++ < 22916ul);
+		#if 1
+		while(incCounts1++ < 714ul)
+		{
+			DisableAllPortALedsExcept(PIN4);
+		}
 		incCounts1=0;
 		#endif
 
-		#if 1
+		#if 0
 		while(count1 != 0)
 		{
 			DisableAllPortALedsExcept(PIN4);
@@ -527,7 +530,7 @@ void TASK_6 (void *pvParameters)
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK6_PERIODICITY; //tsk A frequency
 
-	//volatile TickType_t incCounts2=0;
+	volatile TickType_t incCounts2=0;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -539,13 +542,16 @@ void TASK_6 (void *pvParameters)
 		DisableAllPortALedsExcept(PIN5);
 
 
-		#if 0
-		while(incCounts2++ < 55000ul);
+		#if 1
+		while(incCounts2++ < 1728ul)
+		{
+			DisableAllPortALedsExcept(PIN5);
+		}
 		incCounts2=0;
 		#endif
 
 
-		#if 1
+		#if 0
 		while(count2 != 0)
 		{
 			DisableAllPortALedsExcept(PIN5);
