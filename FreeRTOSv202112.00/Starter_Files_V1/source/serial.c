@@ -80,6 +80,7 @@
 unsigned char receivedChar;
 unsigned char isNewCharAvailable = 0;
 
+volatile unsigned char txSizeLeft;
 unsigned char txBuffer[200];
 unsigned char txDataSizeToSend;
 unsigned char txDataSizeLeftToSend;
@@ -153,18 +154,16 @@ signed portBASE_TYPE vSerialPutString(const signed char * const pcString, unsign
 {
 	int i;
 
-	if(txDataSizeLeftToSend == 0 && pcString != NULL)
+	if(txSizeLeft == 0 && pcString != NULL)
 	{
 	  txDataSizeToSend = usStringLength;
-	  txDataSizeLeftToSend = usStringLength;
+	  txSizeLeft = usStringLength;
 	
 	  for(i = 0;i < usStringLength; i++)
 	  {
 		  txBuffer[i] = pcString[i];
 	  }
-	
-	  xSerialPutChar(txBuffer[txDataSizeToSend - txDataSizeLeftToSend--]);
-		
+	  xSerialPutChar(txBuffer[txDataSizeToSend - txSizeLeft--]);
 	  return pdTRUE;
 	}
 	else
@@ -200,9 +199,9 @@ unsigned char ucInterrupt;
 			case serSOURCE_THRE	:	/* The THRE is empty */
 				
 				/* Do nothing */
-				if(txDataSizeLeftToSend > 0)
+				if(txSizeLeft > 0)
 				{
-					U1THR = txBuffer[txDataSizeToSend - txDataSizeLeftToSend--];
+					U1THR = txBuffer[txDataSizeToSend - txSizeLeft--];
 				}
 				
 				break;
