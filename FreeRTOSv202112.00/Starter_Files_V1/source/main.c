@@ -482,12 +482,13 @@ void TASK_4 (void *pvParameters)
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
 }
-
+volatile int count1 = TASK5_EXECUTION_TIME; //tsk A capacity
 void TASK_5 (void *pvParameters)
 {
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK5_PERIODICITY; //tsk A frequency
-	volatile int count = TASK5_EXECUTION_TIME; //tsk A capacity
+	//volatile int count1 = TASK5_EXECUTION_TIME; //tsk A capacity
+	//volatile TickType_t incCounts1=0;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -498,26 +499,35 @@ void TASK_5 (void *pvParameters)
 
 		DisableAllPortALedsExcept(PIN4);
 
-		while(count != 0)
+		#if 0
+		while(incCounts1++ < 22916ul);
+		incCounts1=0;
+		#endif
+
+		#if 1
+		while(count1 != 0)
 		{
+			DisableAllPortALedsExcept(PIN4);
 			x=xTaskGetTickCount ();
 			if(( x = xTaskGetTickCount () ) > xTime)
 			{
 				xTime = x;
-				count --;
+				count1 --;
 			}
 		}
-		count = TASK5_EXECUTION_TIME;
+		count1 = TASK5_EXECUTION_TIME;
+		#endif
 		// Wait for the next cycle.
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
 }
-
+volatile int count2 = TASK6_EXECUTION_TIME; //tsk A capacity
 void TASK_6 (void *pvParameters)
 {
 	TickType_t xLastWakeTimeA;
 	const TickType_t xFrequency = TASK6_PERIODICITY; //tsk A frequency
-	volatile int count = TASK6_EXECUTION_TIME; //tsk A capacity
+
+	//volatile TickType_t incCounts2=0;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -528,16 +538,26 @@ void TASK_6 (void *pvParameters)
 
 		DisableAllPortALedsExcept(PIN5);
 
-		while(count != 0)
+
+		#if 0
+		while(incCounts2++ < 55000ul);
+		incCounts2=0;
+		#endif
+
+
+		#if 1
+		while(count2 != 0)
 		{
+			DisableAllPortALedsExcept(PIN5);
 			x=xTaskGetTickCount ();
 			if(( x = xTaskGetTickCount () ) > xTime)
 			{
 				xTime = x;
-				count --;
-			}
+				count2 --;
+			}	
 		}
-		count = TASK6_EXECUTION_TIME;
+		count2 = TASK6_EXECUTION_TIME;
+		#endif
 		// Wait for the next cycle.
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
@@ -551,10 +571,10 @@ int main( void )
 
 	
     /* Create Tasks here */
-	xTaskPeriodicCreate(TASK_1,( const char * ) TASK1_NAME,TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,TASK1_PERIODICITY);	
-	xTaskPeriodicCreate(TASK_2,( const char * ) TASK2_NAME,TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,TASK2_PERIODICITY);	
-	xTaskPeriodicCreate(TASK_3,( const char * ) TASK3_NAME,TASK3_STACK_SIZE_WORDS,( void * ) 1,TASK3_PRIORITY,&task3Handler,TASK3_PERIODICITY);	
-	xTaskPeriodicCreate(TASK_4,( const char * ) TASK4_NAME,TASK4_STACK_SIZE_WORDS,( void * ) 1,TASK4_PRIORITY,&task4Handler,TASK4_PERIODICITY);	
+	//xTaskPeriodicCreate(TASK_1,( const char * ) TASK1_NAME,TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,TASK1_PERIODICITY);	
+	//xTaskPeriodicCreate(TASK_2,( const char * ) TASK2_NAME,TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,TASK2_PERIODICITY);	
+	//xTaskPeriodicCreate(TASK_3,( const char * ) TASK3_NAME,TASK3_STACK_SIZE_WORDS,( void * ) 1,TASK3_PRIORITY,&task3Handler,TASK3_PERIODICITY);	
+	//xTaskPeriodicCreate(TASK_4,( const char * ) TASK4_NAME,TASK4_STACK_SIZE_WORDS,( void * ) 1,TASK4_PRIORITY,&task4Handler,TASK4_PERIODICITY);	
 	xTaskPeriodicCreate(TASK_5,( const char * ) TASK5_NAME,TASK5_STACK_SIZE_WORDS,( void * ) 1,TASK5_PRIORITY,&task5Handler,TASK5_PERIODICITY);	
 	xTaskPeriodicCreate(TASK_6,( const char * ) TASK6_NAME,TASK6_STACK_SIZE_WORDS,( void * ) 1,TASK6_PRIORITY,&task6Handler,TASK6_PERIODICITY);	
 	/* Now all the tasks have been started - start the scheduler.
