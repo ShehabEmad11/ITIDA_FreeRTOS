@@ -78,4 +78,34 @@ to exclude the API function. */
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE()       (T1TC)
 #define configUSE_STATS_FORMATTING_FUNCTIONS    1
+
+#define configUSE_APPLICATION_TASK_TAG      (1)
+
+
+typedef unsigned long int uint32;
+typedef unsigned short int uint16;
+
+
+extern uint16 numberUserTasks;
+extern uint32 arrTaskStartTime[];
+extern uint32 arrTaskEndTime[];
+extern uint32 arrTaskTotalExecutionTime[];
+
+
+#define traceTASK_SWITCHED_IN()     do{\
+                                        if((uint16)pxCurrentTCB->pxTaskTag < numberUserTasks)\
+                                        {\
+                                            arrTaskStartTime[(uint16)pxCurrentTCB->pxTaskTag]=T1TC;\
+                                        }\
+                                    }while(0);
+
+
+#define traceTASK_SWITCHED_OUT()    do{\
+                                        if((uint16)pxCurrentTCB->pxTaskTag < numberUserTasks)\
+                                        {\
+                                            arrTaskEndTime[(uint16)pxCurrentTCB->pxTaskTag]=T1TC;\
+                                            arrTaskTotalExecutionTime[(uint16)pxCurrentTCB->pxTaskTag] += (arrTaskEndTime[(uint16)pxCurrentTCB->pxTaskTag] - arrTaskStartTime[(uint16)pxCurrentTCB->pxTaskTag]);\
+                                        }\
+                                    }while(0);
+
 #endif /* FREERTOS_CONFIG_H */

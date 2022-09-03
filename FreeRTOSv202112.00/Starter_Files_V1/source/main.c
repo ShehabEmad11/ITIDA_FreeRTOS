@@ -205,6 +205,15 @@ void DisableAllPortALedsExcept(uint16 ledID)
 }
 
 
+#define NUMBER_USER_TASKS (7)
+
+uint16 numberUserTasks=NUMBER_USER_TASKS;
+uint32 arrTaskStartTime[NUMBER_USER_TASKS]={0};
+uint32 arrTaskEndTime[NUMBER_USER_TASKS]={0};
+uint32 arrTaskTotalExecutionTime[NUMBER_USER_TASKS]={0};
+uint32 SystemTotalExecutionTime=0;
+uint32 SystemCpuLoad=0;
+
 void vApplicationIdleHook( void )
 {
 	DisableAllPortALedsExcept(PIN6);
@@ -212,8 +221,34 @@ void vApplicationIdleHook( void )
 
 void vApplicationTickHook (void)
 {
+	uint16 i;
 
+	static uint32 tickHookCounts=0;
+	tickHookCounts++;
+	#if 0
+	//For debugging
+	if(tickHookCounts%100==0)
+	{
+		__asm("nop");
+	}
+	#endif
+
+	if(tickHookCounts % 10 == 0)
+	{
+		SystemTotalExecutionTime=T1TC;	
+		SystemCpuLoad=0;
+		//Start from i=1 to ignore idle task
+		for(i=1; i<NUMBER_USER_TASKS; i++)
+		{
+			SystemCpuLoad +=arrTaskTotalExecutionTime[i] ;
+		}
+		SystemCpuLoad *=100;	
+		SystemCpuLoad /=SystemTotalExecutionTime;
+	}
 }
+
+
+
 uint16 changeCounter1=0,changeCounter2=0;
 void TASK_1 (void *pvParameters)
 {
@@ -227,6 +262,9 @@ void TASK_1 (void *pvParameters)
 	
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
+
+	/* This task is going to be represented by a voltage scale of 1. */
+    vTaskSetApplicationTaskTag( NULL, ( void * ) 1 );
 
 	while(1)
 	{
@@ -285,7 +323,8 @@ void TASK_2 (void *pvParameters)
 	static buttonEdge_t currentB2Edge=INIT_EDGE,  prevB2Edge=INIT_EDGE;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
-
+	
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 2);
 
 	while(1)
 	{
@@ -340,6 +379,7 @@ void TASK_3 (void *pvParameters)
 
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 3);
 
 	while(1)
 	{
@@ -382,6 +422,7 @@ void TASK_4 (void *pvParameters)
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 4);
 	while(1)
 	{
 		TickType_t xTime = xTaskGetTickCount ();
@@ -450,6 +491,7 @@ void TASK_5 (void *pvParameters)
 	volatile TickType_t incCounts1=0;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 5);
 
 	while(1)
 	{
@@ -492,6 +534,7 @@ void TASK_6 (void *pvParameters)
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
+	vTaskSetApplicationTaskTag( NULL, ( void * ) 6);
 	while(1)
 	{
 		TickType_t xTime = xTaskGetTickCount ();
