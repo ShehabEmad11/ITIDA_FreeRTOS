@@ -90,12 +90,13 @@ extern uint16 numberUserTasks;
 extern uint32 arrTaskStartTime[];
 extern uint32 arrTaskEndTime[];
 extern uint32 arrTaskTotalExecutionTime[];
-
+#include "GPIO.h"
 
 #define traceTASK_SWITCHED_IN()     do{\
                                         if((uint16)pxCurrentTCB->pxTaskTag < numberUserTasks)\
                                         {\
                                             arrTaskStartTime[(uint16)pxCurrentTCB->pxTaskTag]=T1TC;\
+                                            /*GPIO takes Pins with offset 16*/ GPIO_write(PORT_0, (16+(uint16)pxCurrentTCB->pxTaskTag), PIN_IS_HIGH);\
                                         }\
                                     }while(0);
 
@@ -105,6 +106,7 @@ extern uint32 arrTaskTotalExecutionTime[];
                                         {\
                                             arrTaskEndTime[(uint16)pxCurrentTCB->pxTaskTag]=T1TC;\
                                             arrTaskTotalExecutionTime[(uint16)pxCurrentTCB->pxTaskTag] += (arrTaskEndTime[(uint16)pxCurrentTCB->pxTaskTag] - arrTaskStartTime[(uint16)pxCurrentTCB->pxTaskTag]);\
+                                           /*GPIO takes Pins with offset 16*/ GPIO_write(PORT_0, (16+(uint16)pxCurrentTCB->pxTaskTag), PIN_IS_LOW);\
                                         }\
                                     }while(0);
 

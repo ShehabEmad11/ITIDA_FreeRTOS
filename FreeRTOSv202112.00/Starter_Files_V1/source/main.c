@@ -216,14 +216,16 @@ uint32 SystemCpuLoad=0;
 
 void vApplicationIdleHook( void )
 {
-	DisableAllPortALedsExcept(PIN6);
+	//Handled in Traces Macros Now
+	//DisableAllPortALedsExcept(PIN6);
 }
 
 void vApplicationTickHook (void)
 {
 	uint16 i;
-
 	static uint32 tickHookCounts=0;
+	
+	GPIO_write(PORT_0, PIN7, PIN_IS_HIGH);
 	tickHookCounts++;
 	#if 0
 	//For debugging
@@ -245,6 +247,7 @@ void vApplicationTickHook (void)
 		SystemCpuLoad *=100;	
 		SystemCpuLoad /=SystemTotalExecutionTime;
 	}
+	GPIO_write(PORT_0, PIN7, PIN_IS_LOW);
 }
 
 
@@ -271,8 +274,8 @@ void TASK_1 (void *pvParameters)
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
 		
-		
-		DisableAllPortALedsExcept(PIN0);
+		//Handled in Traces Macros Now
+		//DisableAllPortALedsExcept(PIN0);
 
 		currentB1Level	=  GPIO_read(BUTTON1_PORT , BUTTON1_PIN);
 
@@ -330,7 +333,8 @@ void TASK_2 (void *pvParameters)
 	{
 		TickType_t xTime = xTaskGetTickCount ();
 		
-		DisableAllPortALedsExcept(PIN1);
+		//Handled in Traces Macros Now
+		//DisableAllPortALedsExcept(PIN1);
 
 		currentB2Level	=  GPIO_read(BUTTON2_PORT , BUTTON2_PIN);
 
@@ -386,8 +390,8 @@ void TASK_3 (void *pvParameters)
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
 
-
-		DisableAllPortALedsExcept(PIN2);
+		//Handled in Traces Macros Now
+		//DisableAllPortALedsExcept(PIN2);
 		
 		msgObj.ptrArrData=(char*)&localArrData[0];
 		msgObj.newEvent=TRUE;
@@ -428,7 +432,8 @@ void TASK_4 (void *pvParameters)
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
 	
-		DisableAllPortALedsExcept(PIN3);
+		//Handled in Traces Macros Now
+		//DisableAllPortALedsExcept(PIN3);
 
 		if(msgObj.newEvent==TRUE)
 		{
@@ -498,11 +503,14 @@ void TASK_5 (void *pvParameters)
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
 
-		DisableAllPortALedsExcept(PIN4);
+		//Handled in Traces Macros Now
+		//DisableAllPortALedsExcept(PIN4);
 		#if 1
-		while(incCounts1++ < 714ul)
+		while(incCounts1 < 18538ul)
 		{
-			DisableAllPortALedsExcept(PIN4);
+			incCounts1++;
+			//Handled in Traces Macros Now
+			//DisableAllPortALedsExcept(PIN4);
 		}
 		incCounts1=0;
 		#endif
@@ -540,13 +548,16 @@ void TASK_6 (void *pvParameters)
 		TickType_t xTime = xTaskGetTickCount ();
 		TickType_t x;
 
-		DisableAllPortALedsExcept(PIN5);
+		//Handled in Traces Macros Now
+		//DisableAllPortALedsExcept(PIN5);
 
 
 		#if 1
-		while(incCounts2++ < 1728ul)
+		while(incCounts2 < 44484ul)
 		{
-			DisableAllPortALedsExcept(PIN5);
+			incCounts2++;
+			//Handled in Traces Macros Now
+			//DisableAllPortALedsExcept(PIN5);
 		}
 		incCounts2=0;
 		#endif
@@ -574,7 +585,8 @@ int main( void )
 	/* Setup the hardware for use with the Keil demo board. */
 	prvSetupHardware();
 
-	DisableAllPortALedsExcept(PIN15+1);
+	//Handled in Traces Macros Now
+	//DisableAllPortALedsExcept(PIN15+1);
 
 	
     /* Create Tasks here */
