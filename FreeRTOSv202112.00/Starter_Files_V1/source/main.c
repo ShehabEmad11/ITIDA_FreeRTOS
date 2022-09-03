@@ -91,14 +91,7 @@ static void prvSetupHardware( void );
 
 typedef unsigned char uint8;
 typedef unsigned short int uint16;
-
-#if 0
-typedef enum 
-{
-	LOW_LEVEL,
-	HIGH_LEVEL
-}buttonLevel_t;
-#endif
+typedef unsigned long int uint32;
 
 typedef enum 
 {
@@ -120,11 +113,8 @@ typedef enum
 #define BUTTON2_PORT	(PORT_0)
 #define BUTTON2_PIN		(PIN9)
 
-static pinState_t   currentB1Level=PIN_IS_LOW,   prevB1Level=PIN_IS_LOW;
-static buttonEdge_t currentB1Edge=INIT_EDGE,  prevB1Edge=INIT_EDGE;
-	
-static pinState_t   currentB2Level=PIN_IS_LOW,   prevB2Level=PIN_IS_LOW;
-static buttonEdge_t currentB2Edge=INIT_EDGE,  prevB2Edge=INIT_EDGE;
+char runTimeStatusBuff[190];
+
 
 typedef struct 
 {
@@ -141,8 +131,6 @@ typedef struct
 
 
 
-//buttonInfo_t button1Info={FALSE,INIT_EDGE};
-//buttonInfo_t button2Info={FALSE,INIT_EDGE};
 msgInfo_t msgObj={FALSE,NULL,0};
 msgInfo_t button1Obj={FALSE,NULL,0};
 msgInfo_t button2Obj={FALSE,NULL,0};
@@ -222,20 +210,9 @@ void vApplicationIdleHook( void )
 	DisableAllPortALedsExcept(PIN6);
 }
 
-#include <stdio.h>
 void vApplicationTickHook (void)
 {
-	#if 0
-	char arr[11]; TickType_t x;
-	x=xTaskGetTickCount();
-//	snprintf(arr,30,"CurrentTick=%d\n",xTaskGetTickCount());
 
-	if (x%10 == 0)
-	{
-		snprintf(arr,10,"%d\n",x);
-		vSerialPutString(arr,5);
-	}
-	#endif
 }
 uint16 changeCounter1=0,changeCounter2=0;
 void TASK_1 (void *pvParameters)
@@ -245,6 +222,9 @@ void TASK_1 (void *pvParameters)
 	volatile int count = TASK1_EXECUTION_TIME; //tsk A capacity
 	const char risingEvent[]="RISE1\n";
 	const char fallingEvent[]="FALL1\n";
+	static pinState_t   currentB1Level=2,   prevB1Level=2;
+	static buttonEdge_t currentB1Edge=INIT_EDGE,  prevB1Edge=INIT_EDGE;
+	
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
 
@@ -263,8 +243,6 @@ void TASK_1 (void *pvParameters)
 			if(currentB1Level == PIN_IS_HIGH  && prevB1Level == PIN_IS_LOW)
 			{
 				changeCounter1++;
-//				currentB1Edge = RISING_EDGE;
-
 				button1Obj.ptrArrData=(char*)risingEvent;
 				button1Obj.length=sizeof(risingEvent)/sizeof(risingEvent[0]);
 				button1Obj.newEvent=TRUE;
@@ -272,7 +250,6 @@ void TASK_1 (void *pvParameters)
 			else if(currentB1Level == PIN_IS_LOW  && prevB1Level == PIN_IS_HIGH)
 			{
 				changeCounter1++;
-				//currentB1Edge = FALLING_EDGE;
 				button1Obj.ptrArrData=(char*)fallingEvent;
 				button1Obj.length=sizeof(fallingEvent)/sizeof(fallingEvent[0]);
 				button1Obj.newEvent=TRUE;
@@ -280,27 +257,6 @@ void TASK_1 (void *pvParameters)
 		}
 		prevB1Level=currentB1Level;
 
-#if 0
-		if(currentB1Edge != prevB1Edge)
-		{
-			//Report to task2 shared resource
-			if(currentB1Edge == RISING_EDGE)
-			{
-				button1Obj.
-			}
-			else if (currentB1Edge == FALLING_EDGE)
-			{
-
-			}
-			else
-			{
-				vSerialPutString("ERROR_EDGE\n",11);
-			}
-			button1Info.newEvent=TRUE;
-			
-			prevB1Edge=currentB1Edge;
-		}	
-#endif
 #if 0
 		while(count != 0)
 		{
@@ -325,8 +281,11 @@ void TASK_2 (void *pvParameters)
 	volatile int count = TASK2_EXECUTION_TIME; //tsk A capacity
 	const char risingEvent2[]="RISE2\n";
 	const char fallingEvent2[]="FALL2\n";
+	static pinState_t   currentB2Level=2,   prevB2Level=2;
+	static buttonEdge_t currentB2Edge=INIT_EDGE,  prevB2Edge=INIT_EDGE;
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTimeA = 0;
+
 
 	while(1)
 	{
@@ -341,8 +300,6 @@ void TASK_2 (void *pvParameters)
 			if(currentB2Level == PIN_IS_HIGH  && prevB2Level == PIN_IS_LOW)
 			{
 				changeCounter2++;
-//				currentB2Edge = RISING_EDGE;
-
 				button2Obj.ptrArrData=(char*)risingEvent2;
 				button2Obj.length=sizeof(risingEvent2)/sizeof(risingEvent2[0]);
 				button2Obj.newEvent=TRUE;
@@ -350,7 +307,6 @@ void TASK_2 (void *pvParameters)
 			else if(currentB2Level == PIN_IS_LOW  && prevB2Level == PIN_IS_HIGH)
 			{
 				changeCounter2++;
-				//currentB2Edge = FALLING_EDGE;
 				button2Obj.ptrArrData=(char*)fallingEvent2;
 				button2Obj.length=sizeof(fallingEvent2)/sizeof(fallingEvent2[0]);
 				button2Obj.newEvent=TRUE;
@@ -411,6 +367,9 @@ void TASK_3 (void *pvParameters)
 		count = TASK3_EXECUTION_TIME;
 		// Wait for the next cycle.
 	#endif
+		vTaskGetRunTimeStats(runTimeStatusBuff);
+		xSerialPutChar('\n');
+		vSerialPutString(runTimeStatusBuff,190);
 		vTaskDelayUntil( &xLastWakeTimeA, xFrequency );
 	}
 }
@@ -498,7 +457,6 @@ void TASK_5 (void *pvParameters)
 		TickType_t x;
 
 		DisableAllPortALedsExcept(PIN4);
-
 		#if 1
 		while(incCounts1++ < 714ul)
 		{
@@ -577,10 +535,10 @@ int main( void )
 
 	
     /* Create Tasks here */
-	//xTaskPeriodicCreate(TASK_1,( const char * ) TASK1_NAME,TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,TASK1_PERIODICITY);	
-	//xTaskPeriodicCreate(TASK_2,( const char * ) TASK2_NAME,TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,TASK2_PERIODICITY);	
-	//xTaskPeriodicCreate(TASK_3,( const char * ) TASK3_NAME,TASK3_STACK_SIZE_WORDS,( void * ) 1,TASK3_PRIORITY,&task3Handler,TASK3_PERIODICITY);	
-	//xTaskPeriodicCreate(TASK_4,( const char * ) TASK4_NAME,TASK4_STACK_SIZE_WORDS,( void * ) 1,TASK4_PRIORITY,&task4Handler,TASK4_PERIODICITY);	
+	xTaskPeriodicCreate(TASK_1,( const char * ) TASK1_NAME,TASK1_STACK_SIZE_WORDS,( void * ) 1,TASK1_PRIORITY,&task1Handler,TASK1_PERIODICITY);	
+	xTaskPeriodicCreate(TASK_2,( const char * ) TASK2_NAME,TASK2_STACK_SIZE_WORDS,( void * ) 1,TASK2_PRIORITY,&task2Handler,TASK2_PERIODICITY);	
+	xTaskPeriodicCreate(TASK_3,( const char * ) TASK3_NAME,TASK3_STACK_SIZE_WORDS,( void * ) 1,TASK3_PRIORITY,&task3Handler,TASK3_PERIODICITY);	
+	xTaskPeriodicCreate(TASK_4,( const char * ) TASK4_NAME,TASK4_STACK_SIZE_WORDS,( void * ) 1,TASK4_PRIORITY,&task4Handler,TASK4_PERIODICITY);	
 	xTaskPeriodicCreate(TASK_5,( const char * ) TASK5_NAME,TASK5_STACK_SIZE_WORDS,( void * ) 1,TASK5_PRIORITY,&task5Handler,TASK5_PERIODICITY);	
 	xTaskPeriodicCreate(TASK_6,( const char * ) TASK6_NAME,TASK6_STACK_SIZE_WORDS,( void * ) 1,TASK6_PRIORITY,&task6Handler,TASK6_PERIODICITY);	
 	/* Now all the tasks have been started - start the scheduler.
